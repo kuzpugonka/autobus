@@ -7,10 +7,11 @@ import { DateTime } from "luxon";
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const timeZone = "UTC+3";
+const timeZone = "UTC";
 const port = 3000;
 
 const app = express(); // собственно приложение
+app.use(express.static(path.join(__dirname, "public"))); //возможность работать со статическими файлами
 
 const loadBuses = async () => {
   const data = await readFile(path.join(__dirname, "buses.json"), "utf-8");
@@ -40,7 +41,7 @@ const getNextDaparture = (firstDepartureTime, frequencyMinutes) => {
       .set({ hours, minutes });
   }
 
-  while(now > departure){
+  while (now > departure) {
     departure = departure.plus({ minutes: frequencyMinutes });
 
     if (departure > endOfDay) {
@@ -62,28 +63,32 @@ const sendUpdatedData = async () => {
       bus.firstDepartureTime,
       bus.frequencyMinutes
     );
-    
-    // console.log('nextDeparture: ', nextDeparture);
 
     return {
       ...bus,
       nextDeparture: {
-        data: nextDeparture.toFormat('dd-MM-yyyy'),
-        time: nextDeparture.toFormat('HH:mm:ss'),
+        date: nextDeparture.toFormat("yyyy-MM-dd"),
+        time: nextDeparture.toFormat("HH:mm:ss"),
+        //remaining
       },
     };
   });
 
-  return updatedBuses
+  return updatedBuses;
 };
 
-const updatedBuses = sendUpdatedData();
+const sortBuses = (buses) =>
+  [...buses].sort(
+    (a, b) => 
+    new Date(`${a.nextDeparture.date}T${a.nextDeparture.time}`) -
+    new Date(`${b.nextDeparture.date}T${b.nextDeparture.time}`),
+  );
 
 app.get("/next-departure", async (req, res) => {
   try {
     const updatedBuses = await sendUpdatedData();
-    // updatedBuses.sort
-    res.json(updatedBuses);
+    const sortedBuses = sortBuses(updatedBuses);
+    res.json(sortedBuses);
   } catch (error) {
     res.send("error");
   }
