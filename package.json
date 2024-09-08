@@ -17,7 +17,8 @@
   "description": "Онлайн расписание автобусов",
   "dependencies": {
     "express": "^4.19.2",
-    "luxon": "^3.5.0"
+    "luxon": "^3.5.0",
+    "ws": "^8.18.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.4"
